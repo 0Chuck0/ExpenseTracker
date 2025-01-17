@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    
+    <!-- Google Fonts for a sleek design -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Base Styles */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #4CAF50;
+            padding: 20px;
+            color: white;
+            text-align: center;
+            border-bottom: 2px solid #ddd;
+        }
+        h1 {
+            font-size: 36px;
+        }
+        .container {
+            width: 90%;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        input[type="text"], input[type="number"], input[type="date"], select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:focus {
+            outline: none;
+        }
+        .result {
+            font-size: 18px;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f8ff;
+            border-left: 5px solid #4CAF50;
+            color: #333;
+            border-radius: 5px;
+        }
+        #totalExpense{
+            font-weight: bold;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            font-weight: 500;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        /* Media Queries for Responsive Design */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 28px;
+            }
+            h2 {
+                font-size: 24px;
+            }
+            .container {
+                padding: 15px;
+            }
+            input[type="text"], input[type="number"], input[type="date"], select {
+                font-size: 14px;
+            }
+            button {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+            .result {
+                font-size: 16px;
+            }
+        }
+
+        /* For Small Devices like Phones in Portrait Mode */
+        @media (max-width: 480px) {
+
+            h1 {
+                font-size: 24px;
+            }
+            h2 {
+                font-size: 20px;
+            }
+            .container {
+                width: 80%;
+                padding: 10px;
+            }
+            input[type="text"], input[type="number"], input[type="date"], select {
+                font-size: 12px;
+            }
+            button {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+            .result {
+                font-size: 14px;
+            }
+        }
+    </style>
+    
+    <script>
+        // Function to generate year options dynamically
+        function generateYearOptions() {
+            const currentYear = new Date().getFullYear();
+            const yearDropdown = document.getElementById('year');
+            
+            // Add options for 10 years before and 20 years after the current year
+            for (let i = currentYear - 10; i <= currentYear + 10; i++) {
+                const option = document.createElement("option");
+                option.value = i;
+                option.textContent = i;
+                yearDropdown.appendChild(option);
+            }
+
+            // Set the current year as the default selected option
+            yearDropdown.value = currentYear;
+        }
+
+        async function addExpense() {
+            const date = document.getElementById('date').value;
+            const description = document.getElementById('description').value;
+            const amount = document.getElementById('amount').value;
+             // Frontend validation for Amount
+             if (amount <= 0) {
+                alert("Amount must be greater than 0.");
+                return;
+            }
+
+            // Frontend validation for Description
+            if (!description || description.trim().length === 0) {
+                alert("Description cannot be null or empty.");
+                return;
+            }
+            const response = await fetch('/insert', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date, description, amount })
+            });
+
+            const result = await response.json();
+            alert(result.message || result.error);
+            document.getElementById('description').value = '';
+            document.getElementById('amount').value = '';
+        }
+
+        async function getTotalExpense() {
+            const year = document.getElementById('year').value;
+            const monthName = document.getElementById('month').value;
+
+            // Map month name to number
+            const monthMap = {
+                "January": 1,
+                "February": 2,
+                "March": 3,
+                "April": 4,
+                "May": 5,
+                "June": 6,
+                "July": 7,
+                "August": 8,
+                "September": 9,
+                "October": 10,
+                "November": 11,
+                "December": 12
+            };
+
+            const month = monthMap[monthName];  // Get the month number
+
+            const response = await fetch('/get_total_expense', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ year, month })
+            });
+
+            const result = await response.json();
+                // Check if result.total_expense is undefined or null and set it to 0
+            const totalExpense = (result.total_expense == undefined || result.total_expense == null) ? 0:result.total_expense;
+            document.getElementById('totalExpense').textContent = `${monthName} ${year}: ₹ ${totalExpense}`;
+        }
+
+        // Call this function when the page is loaded to generate year options
+        window.onload = generateYearOptions;
+    </script>
+</head>
+<body>
+
+    <header>
+        <h1>Expense Tracker</h1>
+    </header>
+
+    <div class="container">
+        <h2>Add New Expense</h2>
+        <div class="form-group">
+            <label for="date">Date</label>
+            <input type="date" id="date" value="${new Date().toISOString().split('T')[0]}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description</label>
+            <input type="text" id="description" placeholder="Expense description" required>
+        </div>
+
+        <div class="form-group">
+            <label for="amount">Amount</label>
+            <input type="number" id="amount" step="0.01" placeholder="Amount" required>
+        </div>
+
+        <button onclick="addExpense()">Add Expense</button>
+    </div>
+
+    <div class="container">
+        <h2>View Total Expenses for a Month</h2>
+
+        <div class="form-group">
+            <label for="year">Year</label>
+            <select id="year"></select>
+        </div>
+
+        <div class="form-group">
+            <label for="month">Month</label>
+            <select id="month">
+                <option>January</option>
+                <option>February</option>
+                <option>March</option>
+                <option>April</option>
+                <option>May</option>
+                <option>June</option>
+                <option>July</option>
+                <option>August</option>
+                <option>September</option>
+                <option>October</option>
+                <option>November</option>
+                <option>December</option>
+            </select>
+        </div>
+
+        <button onclick="getTotalExpense()">Get Total Expense</button>
+
+        <div class="result" id="totalExpense"></div>
+    </div>
+
+</body>
+</html>
