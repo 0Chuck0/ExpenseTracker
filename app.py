@@ -59,5 +59,33 @@ def get_total_expense():
     else:
         return jsonify({"error": "No data found for the selected month and year."})
 
+@app.route('/get_detailed_expenses', methods=['POST'])
+def get_detailed_expenses():
+    data = request.get_json()
+    year = data['year']
+    month = data['month']
+
+    # Database connection
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Query to fetch only the day, description, and amount for the given month and year
+    cursor.execute('''
+        SELECT DAY(date) AS day, description, amount
+        FROM expenses
+        WHERE YEAR(date) = ? AND MONTH(date) = ?
+    ''', (year, month))
+
+    # Fetch all results
+    result = cursor.fetchall()
+    conn.close()
+
+    # Convert results into a list of dictionaries
+    detailed_expenses = [
+        {"day": row[0], "description": row[1], "amount": row[2]} for row in result
+    ]
+
+    return jsonify(detailed_expenses)
+
 if __name__ == '__main__':
     app.run(debug=True)
